@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>World Cup 2026 — Player Map</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0d12;
+    --surface: #111520;
+    --surface2: #181d2a;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f2f7;
+    --muted: #6b7280;
+    --accent: #e8c840;
+    --accent2: #f0a030;
+    --radius: 10px;
+  }
+
+  html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+  #app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 20px; height: 56px; flex-shrink: 0;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    z-index: 1000;
+  }
+  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--accent); white-space: nowrap; }
+  .brand span { color: var(--muted); font-size: 14px; letter-spacing: 1px; margin-left: 8px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
+
+  .header-controls { display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap; }
+
+  /* Toggle */
+  .toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .toggle button {
+    padding: 6px 16px; font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 400;
+    background: transparent; border: none; color: var(--muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .toggle button.active { background: var(--accent); color: #0a0d12; font-weight: 500; }
+
+  /* Country select */
+  select {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; outline: none;
+    transition: border-color 0.2s;
+  }
+  select:hover, select:focus { border-color: var(--border2); }
+
+  /* Search */
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.4; pointer-events: none; }
+  input[type=text] {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 6px 12px 6px 32px; border-radius: 8px; outline: none; width: 180px;
+    transition: border-color 0.2s;
+  }
+  input[type=text]::placeholder { color: var(--muted); }
+  input[type=text]:focus { border-color: var(--border2); }
+
+  /* Stats pill */
+  .stats-pill {
+    margin-left: auto; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 14px; font-size: 12px; color: var(--muted);
+    white-space: nowrap;
+  }
+  .stats-pill strong { color: var(--accent); font-weight: 500; }
+
+  /* ── Map ── */
+  #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
+
+  .leaflet-container { background: #aad3df; }
+
+  /* ── Tooltip / Popup ── */
+  .leaflet-popup-content-wrapper {
+    background: var(--surface) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+    padding: 0 !important;
+  }
+  .leaflet-popup-content { margin: 0 !important; width: auto !important; }
+  .leaflet-popup-tip-container { display: none; }
+  .leaflet-popup-close-button { color: var(--muted) !important; top: 10px !important; right: 10px !important; font-size: 18px !important; }
+
+  .popup-inner { padding: 16px 18px; min-width: 220px; }
+  .popup-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--text); margin-bottom: 4px; }
+  .popup-nation { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .nation-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .popup-divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+  .popup-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .popup-row svg { flex-shrink: 0; margin-top: 1px; }
+  .popup-row span { color: var(--text); }
+
+  /* ── Legend ── */
+  #legend {
+    position: absolute; bottom: 24px; right: 12px; z-index: 1000;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px; min-width: 140px;
+    font-size: 12px; max-height: 60vh; overflow-y: auto;
+  }
+  #legend h4 { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; cursor: pointer; transition: opacity 0.2s; }
+  .legend-item:hover { opacity: 0.7; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-item span { color: var(--text); }
+  .legend-item.dimmed { opacity: 0.3; }
+
+  /* ── No results ── */
+  #no-results {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 500; text-align: center; pointer-events: none; display: none;
+  }
+  #no-results p { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--muted); }
+  #no-results small { font-size: 13px; color: var(--muted); opacity: 0.6; }
+
+  /* Custom marker */
+  .cpin { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,0.25); cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .cpin:hover { transform: scale(1.5); box-shadow: 0 0 0 3px rgba(255,255,255,0.15); }
+  .cpin.highlighted { transform: scale(1.6); box-shadow: 0 0 0 4px rgba(255,255,255,0.3); z-index: 999 !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">WC2026 <span>Player Map</span></div>
+    <div class="header-controls">
+      <div class="toggle">
+        <button class="active" id="btn-clubs" onclick="setMode('clubs')">⚽ Clubs</button>
+        <button id="btn-birth" onclick="setMode('birth')">📍 Birthplaces</button>
+      </div>
+      <select id="fed-filter" onchange="filterFederation(this.value)">
+        <option value="all">All federations</option>
+        <option value="UEFA">UEFA (Europe)</option>
+        <option value="CONMEBOL">CONMEBOL (S. America)</option>
+        <option value="CONCACAF">CONCACAF (N/C America)</option>
+        <option value="CAF">CAF (Africa)</option>
+        <option value="AFC">AFC (Asia)</option>
+        <option value="OFC">OFC (Oceania)</option>
+      </select>
+      <select id="country-filter" onchange="filterCountry(this.value)">
+        <option value="all">All nations</option>
+      </select>
+      <div class="search-wrap">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="search" placeholder="Search player…" oninput="onSearch(this.value)" />
+      </div>
+      <div class="stats-pill" id="stats-pill">Showing <strong id="stat-count">0</strong> players</div>
+    </div>
+  </header>
+  <div style="position:relative; flex:1; overflow:hidden; min-height:0;">
+    <div id="map"></div>
+    <div id="legend"><h4 id="legend-title">By nation</h4><div id="legend-items"></div></div>
+    <div id="no-results"><p>No players found</p><small>Try a different search or filter</small></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script>
+window.onload = function() {
+// ── Nation colours ──────────────────────────────────────────────────────────
+const NATION_COLORS = {
+  // AFC
+  "Australia":              "#ffd700",
+  "Iran":                   "#239f40",
+  "Iraq":                   "#007a3d",
+  "Japan":                  "#bc002d",
+  "Jordan":                 "#007a3d",
+  "Qatar":                  "#8d1b3d",
+  "Saudi Arabia":           "#006c35",
+  "South Korea":            "#cd2e3a",
+  "Uzbekistan":             "#1eb53a",
+  // CAF
+  "Algeria":                "#006233",
+  "Cape Verde":             "#003893",
+  "DR Congo":               "#007fff",
+  "Egypt":                  "#ce1126",
+  "Ghana":                  "#006b3f",
+  "Ivory Coast":            "#f77f00",
+  "Morocco":                "#c1272d",
+  "Senegal":                "#00853f",
+  "South Africa":           "#007a4d",
+  "Tunisia":                "#e70013",
+  // CONCACAF
+  "Canada":                 "#ff0000",
+  "Curaçao":                "#003087",
+  "Haiti":                  "#00209f",
+  "Mexico":                 "#006847",
+  "Panama":                 "#da121a",
+  "United States":          "#002868",
+  // CONMEBOL
+  "Argentina":              "#74acdf",
+  "Brazil":                 "#f9c231",
+  "Colombia":               "#fcd116",
+  "Ecuador":                "#ffd100",
+  "Paraguay":               "#d52b1e",
+  "Uruguay":                "#5aaae7",
+  // OFC
+  "New Zealand":            "#ffffff",
+  // UEFA
+  "Austria":                "#ed2939",
+  "Belgium":                "#000000",
+  "Bosnia and Herzegovina": "#002395",
+  "Croatia":                "#ff0000",
+  "Czech Republic":         "#d7141a",
+  "England":                "#ffffff",
+  "France":                 "#002395",
+  "Germany":                "#ffffff",
+  "Netherlands":            "#ff6600",
+  "Norway":                 "#ef2b2d",
+  "Portugal":               "#006600",
+  "Scotland":               "#003865",
+  "Spain":                  "#aa151b",
+  "Sweden":                 "#006aa7",
+  "Switzerland":            "#ff0000",
+  "Turkey":                 "#e30a17",
+};
+
+// ── Federation lookup ────────────────────────────────────────────────────────
+const FEDERATION = {
+  "UEFA":     ["Austria","Belgium","Bosnia and Herzegovina","Croatia","Czech Republic","England","France","Germany","Netherlands","Norway","Portugal","Scotland","Spain","Sweden","Switzerland","Turkey"],
+  "CONMEBOL": ["Argentina","Brazil","Colombia","Ecuador","Paraguay","Uruguay"],
+  "CONCACAF": ["Canada","Curaçao","Haiti","Mexico","Panama","United States"],
+  "CAF":      ["Algeria","Cape Verde","DR Congo","Egypt","Ghana","Ivory Coast","Morocco","Senegal","South Africa","Tunisia"],
+  "AFC":      ["Australia","Iran","Iraq","Japan","Jordan","Qatar","Saudi Arabia","South Korea","Uzbekistan"],
+  "OFC":      ["New Zealand"],
+};
+
+// Build reverse lookup: nation → federation
+const NATION_FED = {};
+Object.entries(FEDERATION).forEach(([fed, nations]) => {
+  nations.forEach(n => NATION_FED[n] = fed);
+});
+
+let PLAYERS = [];
+
+// ── State ───────────────────────────────────────────────────────────────────
+let mode = 'clubs';
+let activeCountry = 'all';
+let activeFederation = 'all';
+let searchTerm = '';
+let markers = [];
+
+// ── Map setup ───────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [30, 15],
+  zoom: 3,
+  minZoom: 2,
+  maxZoom: 12,
+  zoomControl: true,
+});
+
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+  attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
+  maxZoom: 19
+}).addTo(map);
+
+const nations = ["Algeria","Argentina","Australia","Austria","Belgium","Bosnia and Herzegovina","Brazil","Canada","Cape Verde","Colombia","Croatia","Curaçao","Czech Republic","DR Congo","Ecuador","Egypt","England","France","Germany","Ghana","Haiti","Iran","Iraq","Ivory Coast","Japan","Jordan","Mexico","Morocco","Netherlands","New Zealand","Norway","Panama","Paraguay","Portugal","Qatar","Saudi Arabia","Scotland","Senegal","South Africa","South Korea","Spain","Sweden","Switzerland","Tunisia","Turkey","United States","Uruguay","Uzbekistan"];
+const sel = document.getElementById('country-filter');
+nations.forEach(n => {
+  const opt = document.createElement('option');
+  opt.value = n; opt.textContent = n;
+  sel.appendChild(opt);
+});
+
+// ── Legend ───────────────────────────────────────────────────────────────────
+function buildLegend() {
+  const el = document.getElementById('legend-items');
+  el.innerHTML = '';
+  nations.forEach(n => {
+    const color = NATION_COLORS[n] || '#888';
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><span>${n}</span>`;
+    item.onclick = () => {
+      document.getElementById('country-filter').value = n;
+      filterCountry(n);
+    };
+    el.appendChild(item);
+  });
+}
+buildLegend();
+
+// ── Marker creation ──────────────────────────────────────────────────────────
+function makeIcon(color, count) {
+  const isLight = color === '#ffffff';
+  const fill    = isLight ? '#e8e8e8' : color;
+  const border  = isLight ? 'rgba(30,30,30,0.6)' : 'rgba(255,255,255,0.35)';
+  // Scale dot size: 1 player = 12px, up to ~24px for 10+
+  const size    = Math.round(12 + Math.min(count - 1, 9) * 1.4);
+  const label   = count > 1 ? `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:${size < 18 ? 9 : 11}px;font-weight:600;color:${isLight ? '#333' : '#fff'};pointer-events:none;">${count}</span>` : '';
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;width:${size}px;height:${size}px;border-radius:50%;background:${fill};border:2px solid ${border};box-shadow:0 1px 4px rgba(0,0,0,0.3);">${label}</div>`,
+    iconSize:    [size, size],
+    iconAnchor:  [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2) - 4],
+  });
+}
+
+function popupHtml(group) {
+  // group is an array of players at the same location
+  const rows = group.map(p => {
+    const color = NATION_COLORS[p.nation] || '#888';
+    const detail = mode === 'clubs' ? p.club : (p.birth || '');
+    return `<div class="popup-row" style="padding:6px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <div>
+          <div style="font-weight:500;color:var(--text);font-size:13px;">${p.name}</div>
+          <div style="font-size:11px;color:var(--muted);">${p.nation}${detail ? ' · ' + detail : ''}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  const loc = mode === 'clubs' ? group[0].club : (group[0].birth || '');
+  return `<div class="popup-inner" style="padding:10px 14px;">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">${loc}</div>
+    ${rows}
+  </div>`;
+}
+
+// ── Render markers ───────────────────────────────────────────────────────────
+function renderMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  const filtered = PLAYERS.filter(p => {
+    const fedOk     = activeFederation === 'all' || NATION_FED[p.nation] === activeFederation;
+    const countryOk = activeCountry === 'all' || p.nation === activeCountry;
+    const searchOk  = !searchTerm
+      || p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      || (p.club || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return fedOk && countryOk && searchOk;
+  });
+
+  document.getElementById('no-results').style.display = filtered.length === 0 ? 'block' : 'none';
+  document.getElementById('stat-count').textContent = filtered.length;
+
+  // Group players by exact coordinate
+  const groups = {};
+  filtered.forEach(p => {
+    const lat = mode === 'clubs' ? p.club_lat : p.birth_lat;
+    const lng = mode === 'clubs' ? p.club_lng : p.birth_lng;
+    if (lat == null || lng == null) return;
+    const key = `${lat},${lng}`;
+    if (!groups[key]) groups[key] = { lat, lng, players: [] };
+    groups[key].players.push(p);
+  });
+
+  Object.values(groups).forEach(({ lat, lng, players }) => {
+    // Pick colour — if all same nation use that colour, else grey
+    const nations = [...new Set(players.map(p => p.nation))];
+    const color = nations.length === 1 ? (NATION_COLORS[nations[0]] || '#888') : '#888';
+    const m = L.marker([lat, lng], { icon: makeIcon(color, players.length) })
+      .bindPopup(popupHtml(players), { maxWidth: 300 });
+    m.addTo(map);
+    markers.push(m);
+  });
+
+  // Update legend highlight
+  document.querySelectorAll('.legend-item').forEach(el => {
+    const name = el.querySelector('span').textContent;
+    el.classList.toggle('dimmed', activeCountry !== 'all' && name !== activeCountry);
+  });
+}
+
+// ── Controls ─────────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-clubs').classList.toggle('active', m === 'clubs');
+  document.getElementById('btn-birth').classList.toggle('active', m === 'birth');
+  renderMarkers();
+}
+
+function filterFederation(v) {
+  activeFederation = v;
+  // Reset country filter when federation changes
+  activeCountry = 'all';
+  document.getElementById('country-filter').value = 'all';
+  renderMarkers();
+}
+
+function filterCountry(v) {
+  activeCountry = v;
+  renderMarkers();
+  if (v !== 'all') {
+    const inView = PLAYERS.filter(p => p.nation === v);
+    if (inView.length > 0) {
+      const lats = inView.map(p => mode === 'clubs' ? p.stadium_lat : p.birth_lat);
+      const lngs = inView.map(p => mode === 'clubs' ? p.stadium_lng : p.birth_lng);
+      const bounds = L.latLngBounds(inView.map(p => [
+        mode === 'clubs' ? p.club_lat : p.birth_lat,
+        mode === 'clubs' ? p.club_lng : p.birth_lng
+      ]).filter(([a,b]) => a != null && b != null));
+      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 6 });
+    }
+  }
+}
+
+function onSearch(v) {
+  searchTerm = v;
+  renderMarkers();
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+fetch('players.json?v=' + Date.now())
+  .then(r => r.json())
+  .then(data => {
+    PLAYERS = data;
+    renderMarkers();
+  })
+  .catch(() => console.error('Could not load players.json — make sure you are running a local server (python -m http.server) and the file is in the same folder as index.html'));
+
+// Expose controls to global scope for inline onclick handlers
+window.setMode = setMode;
+window.filterFederation = filterFederation;
+window.filterCountry = filterCountry;
+window.onSearch = onSearch;
+}; // end window.onload
+</script>
+</body>
+</html>
