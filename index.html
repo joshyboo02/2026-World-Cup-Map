@@ -30,30 +30,30 @@
 
   /* ── Header ── */
   header {
-    display: flex; align-items: center; gap: 20px;
-    padding: 0 20px; height: 56px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 8px 12px; flex-shrink: 0;
     background: var(--surface); border-bottom: 1px solid var(--border);
     z-index: 1000;
   }
-  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--accent); white-space: nowrap; }
-  .brand span { color: var(--muted); font-size: 14px; letter-spacing: 1px; margin-left: 8px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
+  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); white-space: nowrap; }
+  .brand span { color: var(--muted); font-size: 13px; letter-spacing: 1px; margin-left: 6px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
 
-  .header-controls { display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap; }
+  .header-controls { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
 
   /* Toggle */
   .toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .toggle button {
-    padding: 6px 16px; font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 400;
+    padding: 6px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif; font-weight: 400;
     background: transparent; border: none; color: var(--muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
   .toggle button.active { background: var(--accent); color: #0a0d12; font-weight: 500; }
 
-  /* Country select */
+  /* Selects */
   select {
     background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
-    padding: 6px 12px; border-radius: 8px; cursor: pointer; outline: none;
-    transition: border-color 0.2s;
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    padding: 6px 8px; border-radius: 8px; cursor: pointer; outline: none;
+    transition: border-color 0.2s; max-width: 140px;
   }
   select:hover, select:focus { border-color: var(--border2); }
 
@@ -62,20 +62,28 @@
   .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.4; pointer-events: none; }
   input[type=text] {
     background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
-    padding: 6px 12px 6px 32px; border-radius: 8px; outline: none; width: 180px;
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    padding: 6px 12px 6px 30px; border-radius: 8px; outline: none; width: 130px;
     transition: border-color 0.2s;
   }
   input[type=text]::placeholder { color: var(--muted); }
-  input[type=text]:focus { border-color: var(--border2); }
+  input[type=text]:focus { border-color: var(--border2); width: 160px; }
 
   /* Stats pill */
   .stats-pill {
-    margin-left: auto; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; padding: 5px 14px; font-size: 12px; color: var(--muted);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px; font-size: 11px; color: var(--muted);
     white-space: nowrap;
   }
   .stats-pill strong { color: var(--accent); font-weight: 500; }
+
+  @media (max-width: 600px) {
+    .brand span { display: none; }
+    select { max-width: 120px; font-size: 11px; }
+    input[type=text] { width: 100px; }
+    input[type=text]:focus { width: 120px; }
+    #legend { display: none; }
+  }
 
   /* ── Map ── */
   #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
@@ -137,7 +145,7 @@
     <div class="brand">WC2026 <span>Player Map</span></div>
     <div class="header-controls">
       <div class="toggle">
-        <button class="active" id="btn-clubs" onclick="setMode('clubs')">⚽ Clubs</button>
+        <button class="active" id="btn-clubs" onclick="setMode('clubs')">⚽ Club Stadiums</button>
         <button id="btn-birth" onclick="setMode('birth')">📍 Birthplaces</button>
       </div>
       <select id="fed-filter" onchange="filterFederation(this.value)">
@@ -432,3 +440,4 @@ window.onSearch = onSearch;
 </script>
 </body>
 </html>
+
