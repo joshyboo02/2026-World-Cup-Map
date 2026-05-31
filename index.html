@@ -38,7 +38,7 @@
   .brand { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); white-space: nowrap; }
   .brand span { color: var(--muted); font-size: 13px; letter-spacing: 1px; margin-left: 6px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
 
-  .header-controls { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+  .header-controls { display: flex; align-items: center; gap: 8px; flex: 1; overflow-x: auto; padding-bottom: 2px; }
 
   /* Toggle */
   .toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -77,6 +77,13 @@
   }
   .stats-pill strong { color: var(--accent); font-weight: 500; }
 
+  .abroad-btn {
+    padding: 6px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif;
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  }
+  .abroad-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0d12; font-weight: 500; }
+
   @media (max-width: 600px) {
     .brand span { display: none; }
     select { max-width: 120px; font-size: 11px; }
@@ -98,7 +105,7 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
     padding: 0 !important;
   }
-  .leaflet-popup-content { margin: 0 !important; width: auto !important; }
+  .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-height: 450px; overflow-y: auto; }
   .leaflet-popup-tip-container { display: none; }
   .leaflet-popup-close-button { color: var(--muted) !important; top: 10px !important; right: 10px !important; font-size: 18px !important; }
 
@@ -148,6 +155,7 @@
         <button class="active" id="btn-clubs" onclick="setMode('clubs')">⚽ Clubs</button>
         <button id="btn-birth" onclick="setMode('birth')">📍 Birthplaces</button>
       </div>
+      <button class="abroad-btn" id="btn-abroad" onclick="toggleAbroad()">🌍 Born abroad</button>
       <select id="fed-filter" onchange="filterFederation(this.value)">
         <option value="all">All federations</option>
         <option value="UEFA">UEFA (Europe)</option>
@@ -230,7 +238,7 @@ const NATION_COLORS = {
   "Portugal":               "#006600",
   "Scotland":               "#003865",
   "Spain":                  "#aa151b",
-  "Sweden":                 "#fecc02",
+  "Sweden":                 "#ffcc00",
   "Switzerland":            "#ff0000",
   "Turkey":                 "#e30a17",
 };
@@ -251,13 +259,38 @@ Object.entries(FEDERATION).forEach(([fed, nations]) => {
   nations.forEach(n => NATION_FED[n] = fed);
 });
 
-let PLAYERS = [];
+// ── Abroad detection ─────────────────────────────────────────────────────────
+const NATION_HOME_COUNTRIES = {
+  "England":                ["England"],
+  "Scotland":               ["Scotland"],
+  "Wales":                  ["Wales"],
+  "United States":          ["United States", "USA"],
+  "South Korea":            ["South Korea"],
+  "DR Congo":               ["DR Congo", "Democratic Republic of the Congo"],
+  "Ivory Coast":            ["Ivory Coast", "Côte d'Ivoire"],
+  "Czech Republic":         ["Czech Republic", "Czechia"],
+  "Bosnia and Herzegovina": ["Bosnia and Herzegovina"],
+  "New Zealand":            ["New Zealand"],
+};
 
+function getHomeCountries(nation) {
+  return NATION_HOME_COUNTRIES[nation] || [nation];
+}
+
+function isBornAbroad(player) {
+  const birth = player.birth || '';
+  const parts = birth.split(',');
+  const birthCountry = parts[parts.length - 1].trim();
+  if (!birthCountry) return false;
+  const homeCountries = getHomeCountries(player.nation);
+  return !homeCountries.some(c => birthCountry.includes(c));
+}
 // ── State ───────────────────────────────────────────────────────────────────
 let mode = 'clubs';
 let activeCountry = 'all';
 let activeFederation = 'all';
 let searchTerm = '';
+let abroadOnly = false;
 let markers = [];
 
 // ── Map setup ───────────────────────────────────────────────────────────────
@@ -318,25 +351,24 @@ function makeIcon(color, count) {
 }
 
 function popupHtml(group) {
-  // group is an array of players at the same location
-  const rows = group.map(p => {
-    const color = NATION_COLORS[p.nation] || '#888';
+  const loc   = mode === 'clubs' ? group[0].club : (group[0].birth || '');
+  const count = group.length;
+  const rows  = group.map(p => {
+    const color  = NATION_COLORS[p.nation] || '#888';
     const detail = mode === 'clubs' ? p.club : (p.birth || '');
-    return `<div class="popup-row" style="padding:6px 0;border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:7px;">
-        <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-        <div>
-          <div style="font-weight:500;color:var(--text);font-size:13px;">${p.name}</div>
-          <div style="font-size:11px;color:var(--muted);">${p.nation}${detail ? ' · ' + detail : ''}</div>
-        </div>
+    return `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+      <div>
+        <div style="font-weight:500;color:var(--text);font-size:13px;">${p.name}</div>
+        <div style="font-size:11px;color:var(--muted);">${p.nation}${detail ? ' · ' + detail : ''}</div>
       </div>
     </div>`;
   }).join('');
-  const loc = mode === 'clubs' ? group[0].club : (group[0].birth || '');
-  return `<div class="popup-inner" style="padding:10px 14px;">
-    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">${loc}</div>
-    ${rows}
-  </div>`;
+  return `<div style="position:sticky;top:0;background:var(--surface);padding:10px 14px 6px;border-bottom:1px solid var(--border);z-index:1;">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">${loc}</div>
+    ${count > 1 ? `<div style="font-size:10px;color:var(--accent);margin-top:2px;">${count} players</div>` : ''}
+  </div>
+  <div style="padding:0 14px 6px;">${rows}</div>`;
 }
 
 // ── Render markers ───────────────────────────────────────────────────────────
@@ -350,7 +382,8 @@ function renderMarkers() {
     const searchOk  = !searchTerm
       || p.name.toLowerCase().includes(searchTerm.toLowerCase())
       || (p.club || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return fedOk && countryOk && searchOk;
+    const abroadOk  = !abroadOnly || isBornAbroad(p);
+    return fedOk && countryOk && searchOk && abroadOk;
   });
 
   document.getElementById('no-results').style.display = filtered.length === 0 ? 'block' : 'none';
@@ -372,7 +405,7 @@ function renderMarkers() {
     const nations = [...new Set(players.map(p => p.nation))];
     const color = nations.length === 1 ? (NATION_COLORS[nations[0]] || '#888') : '#888';
     const m = L.marker([lat, lng], { icon: makeIcon(color, players.length) })
-      .bindPopup(popupHtml(players), { maxWidth: 300 });
+      .bindPopup(popupHtml(players), { maxWidth: 280 });
     m.addTo(map);
     markers.push(m);
   });
@@ -389,6 +422,12 @@ function setMode(m) {
   mode = m;
   document.getElementById('btn-clubs').classList.toggle('active', m === 'clubs');
   document.getElementById('btn-birth').classList.toggle('active', m === 'birth');
+  renderMarkers();
+}
+
+function toggleAbroad() {
+  abroadOnly = !abroadOnly;
+  document.getElementById('btn-abroad').classList.toggle('active', abroadOnly);
   renderMarkers();
 }
 
@@ -428,11 +467,17 @@ fetch('players.json?v=' + Date.now())
   .then(data => {
     PLAYERS = data;
     renderMarkers();
+    // Force Leaflet to recalculate map size after everything has rendered
+    setTimeout(() => map.invalidateSize(), 100);
   })
   .catch(() => console.error('Could not load players.json — make sure you are running a local server (python -m http.server) and the file is in the same folder as index.html'));
 
+// Also fix size if window is resized (e.g. phone rotation)
+window.addEventListener('resize', () => map.invalidateSize());
+
 // Expose controls to global scope for inline onclick handlers
 window.setMode = setMode;
+window.toggleAbroad = toggleAbroad;
 window.filterFederation = filterFederation;
 window.filterCountry = filterCountry;
 window.onSearch = onSearch;
@@ -440,4 +485,3 @@ window.onSearch = onSearch;
 </script>
 </body>
 </html>
-
