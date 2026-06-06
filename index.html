@@ -32,20 +32,32 @@
     display: flex; align-items: center; gap: 10px;
     padding: 8px 12px; flex-shrink: 0;
     background: var(--surface); border-bottom: 1px solid var(--border);
-    z-index: 1000; overflow: hidden;
+    z-index: 1000;
   }
   .brand { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); white-space: nowrap; flex-shrink: 0; }
   .brand span { color: var(--muted); font-size: 13px; letter-spacing: 1px; margin-left: 6px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
   .toggle { flex-shrink: 0; }
   .header-controls { display: flex; align-items: center; gap: 8px; overflow-x: auto; flex: 1; }
 
-  @media (max-width: 600px) {
-    .brand { display: none; }
-    select { max-width: 110px; font-size: 11px; flex-shrink: 0; }
-    input[type=text] { width: 90px; flex-shrink: 0; }
-    .abroad-btn { flex-shrink: 0; }
+  /* Mobile second bar — hidden on desktop */
+  .mobile-bar {
+    display: none;
+  }
+
+  @media (max-width: 700px) {
+    /* Hide toggle and brand from main header on mobile */
+    header .toggle { display: none; }
+    .brand span { display: none; }
+    .header-controls { overflow-x: auto; }
     .stats-pill { display: none; }
     #legend { display: none; }
+    /* Show mobile bar */
+    .mobile-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      flex-shrink: 0; z-index: 1000;
+    }
   }
 
   /* Toggle */
@@ -179,6 +191,13 @@
       <div class="stats-pill" id="stats-pill">Showing <strong id="stat-count">0</strong> players</div>
     </div>
   </header>
+  <div class="mobile-bar">
+    <div class="toggle">
+      <button class="active" id="btn-clubs-m" onclick="setMode('clubs')">⚽ Clubs</button>
+      <button id="btn-birth-m" onclick="setMode('birth')">📍 Birthplaces</button>
+    </div>
+    <button class="abroad-btn" id="btn-abroad-m" onclick="toggleAbroad()">🌍 Born abroad</button>
+  </div>
   <div style="position:relative; flex:1; overflow:hidden; min-height:0;">
     <div id="map"></div>
     <div id="legend"><h4 id="legend-title">By nation</h4><div id="legend-items"></div></div>
@@ -426,12 +445,15 @@ function setMode(m) {
   mode = m;
   document.getElementById('btn-clubs').classList.toggle('active', m === 'clubs');
   document.getElementById('btn-birth').classList.toggle('active', m === 'birth');
+  document.getElementById('btn-clubs-m').classList.toggle('active', m === 'clubs');
+  document.getElementById('btn-birth-m').classList.toggle('active', m === 'birth');
   renderMarkers();
 }
 
 function toggleAbroad() {
   abroadOnly = !abroadOnly;
   document.getElementById('btn-abroad').classList.toggle('active', abroadOnly);
+  document.getElementById('btn-abroad-m').classList.toggle('active', abroadOnly);
   renderMarkers();
 }
 
