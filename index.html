@@ -28,23 +28,32 @@
 
   #app { display: flex; flex-direction: column; height: 100vh; }
 
-  /* ── Header ── */
   header {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 10px;
     padding: 8px 12px; flex-shrink: 0;
     background: var(--surface); border-bottom: 1px solid var(--border);
-    z-index: 1000;
+    z-index: 1000; overflow: hidden;
   }
-  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); white-space: nowrap; }
+  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); white-space: nowrap; flex-shrink: 0; }
   .brand span { color: var(--muted); font-size: 13px; letter-spacing: 1px; margin-left: 6px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
+  .toggle { flex-shrink: 0; }
+  .header-controls { display: flex; align-items: center; gap: 8px; overflow-x: auto; flex: 1; }
 
-  .header-controls { display: flex; align-items: center; gap: 8px; flex: 1; overflow-x: auto; padding-bottom: 2px; }
+  @media (max-width: 600px) {
+    .brand { display: none; }
+    select { max-width: 110px; font-size: 11px; flex-shrink: 0; }
+    input[type=text] { width: 90px; flex-shrink: 0; }
+    .abroad-btn { flex-shrink: 0; }
+    .stats-pill { display: none; }
+    #legend { display: none; }
+  }
 
   /* Toggle */
   .toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .toggle button {
     padding: 6px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif; font-weight: 400;
     background: transparent; border: none; color: var(--muted); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    touch-action: manipulation;
   }
   .toggle button.active { background: var(--accent); color: #0a0d12; font-weight: 500; }
 
@@ -81,16 +90,11 @@
     padding: 6px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif;
     background: transparent; border: 1px solid var(--border); color: var(--muted);
     border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    touch-action: manipulation;
   }
   .abroad-btn.active { background: var(--accent); border-color: var(--accent); color: #0a0d12; font-weight: 500; }
 
-  @media (max-width: 600px) {
-    .brand span { display: none; }
-    select { max-width: 120px; font-size: 11px; }
-    input[type=text] { width: 100px; }
-    input[type=text]:focus { width: 120px; }
-    #legend { display: none; }
-  }
+
 
   /* ── Map ── */
   #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
@@ -150,11 +154,11 @@
 <div id="app">
   <header>
     <div class="brand">WC2026 <span>Player Map</span></div>
+    <div class="toggle">
+      <button class="active" id="btn-clubs" onclick="setMode('clubs')">⚽ Clubs</button>
+      <button id="btn-birth" onclick="setMode('birth')">📍 Birthplaces</button>
+    </div>
     <div class="header-controls">
-      <div class="toggle">
-        <button class="active" id="btn-clubs" onclick="setMode('clubs')">⚽ Clubs</button>
-        <button id="btn-birth" onclick="setMode('birth')">📍 Birthplaces</button>
-      </div>
       <button class="abroad-btn" id="btn-abroad" onclick="toggleAbroad()">🌍 Born abroad</button>
       <select id="fed-filter" onchange="filterFederation(this.value)">
         <option value="all">All federations</option>
