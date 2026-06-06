@@ -384,16 +384,16 @@
     "club_lng": 20.4643707
   },
   {
-    "name": "Cho Yu-min",
+    "name": "Cho Wi-Je",
     "nation": "South Korea",
     "pos": "DF",
-    "club": "Sharjah",
-    "caps": "18",
-    "birth": "Daegu, South Korea",
-    "birth_lat": 35.8713,
-    "birth_lng": 128.6018,
-    "club_lat": 24.9760668,
-    "club_lng": 56.2536044
+    "club": "Jeonbuk Hyundai Motors",
+    "caps": "1",
+    "birth": "Busan, South Korea",
+    "birth_lat": 35.1799528,
+    "birth_lng": 129.0752365,
+    "club_lat": 35.8683876,
+    "club_lng": 127.0647815
   },
   {
     "name": "Lee Tae-seok",
@@ -1584,16 +1584,16 @@
     "club_lng": 14.442208
   },
   {
-    "name": "Osman Hadžikić",
+    "name": "Mladen Jurkas",
     "nation": "Bosnia and Herzegovina",
     "pos": "GK",
-    "club": "Slaven Belupo",
+    "club": "Borac Banja Luka",
     "caps": "0",
-    "birth": "Klosterneuburg, Austria",
-    "birth_lat": 48.30499,
-    "birth_lng": 16.323756,
-    "club_lat": 46.1662442,
-    "club_lng": 16.8341214
+    "birth": "Doboj, Bosnia and Herzegovina",
+    "birth_lat": 44.731389,
+    "birth_lng": 18.084444,
+    "club_lat": 44.7761,
+    "club_lng": 17.1996
   },
   {
     "name": "Sead Kolašinac",
@@ -6168,16 +6168,16 @@
     "club_lng": 9.1783022
   },
   {
-    "name": "Lennart Karl",
+    "name": "Assan Ouédraogo",
     "nation": "Germany",
     "pos": "3MF",
-    "club": "Bayern Munich",
+    "club": "RB Leipzig",
     "caps": "2",
-    "birth": "Frammersbach, Germany",
-    "birth_lat": 50.0680283,
-    "birth_lng": 9.4534489,
-    "club_lat": 48.1371079,
-    "club_lng": 11.5753822
+    "birth": "Mülheim, Germany",
+    "birth_lat": 51.4275,
+    "birth_lng": 6.8825,
+    "club_lat": 51.3443163,
+    "club_lng": 12.3403113
   },
   {
     "name": "Kai Havertz",
@@ -14384,8 +14384,8 @@
     "birth": "Teshie, Ghana",
     "birth_lat": 5.5822343,
     "birth_lng": -0.1135104,
-    "club_lat": 51.8983402,
-    "club_lng": -8.4722218
+    "club_lat": 53.340833,
+    "club_lng": -6.316667
   },
   {
     "name": "Abdul Rahman Baba",
